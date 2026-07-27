@@ -12,19 +12,21 @@ const msalConfig = {
 
 let msalInstance: PublicClientApplication | null = null;
 
-function getMsalInstance(): PublicClientApplication {
+async function getMsalInstance(): Promise<PublicClientApplication> {
   if (!msalInstance) {
     msalInstance = new PublicClientApplication(msalConfig);
+    await msalInstance.initialize();
   }
   return msalInstance;
 }
 
 export async function login(): Promise<AuthenticationResult> {
-  return getMsalInstance().loginPopup({ scopes: GRAPH_SCOPES });
+  const instance = await getMsalInstance();
+  return instance.loginPopup({ scopes: GRAPH_SCOPES });
 }
 
 export async function getAccessToken(): Promise<string> {
-  const instance = getMsalInstance();
+  const instance = await getMsalInstance();
   const accounts = instance.getAllAccounts();
 
   if (accounts.length === 0) {

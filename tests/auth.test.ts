@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const loginPopupMock = vi.fn();
 const acquireTokenSilentMock = vi.fn();
 const getAllAccountsMock = vi.fn();
+const initializeMock = vi.fn();
 
 vi.mock('@azure/msal-browser', () => {
   return {
@@ -10,6 +11,7 @@ vi.mock('@azure/msal-browser', () => {
       loginPopup: loginPopupMock,
       acquireTokenSilent: acquireTokenSilentMock,
       getAllAccounts: getAllAccountsMock,
+      initialize: initializeMock,
     })),
   };
 });
@@ -19,6 +21,8 @@ beforeEach(() => {
   loginPopupMock.mockReset();
   acquireTokenSilentMock.mockReset();
   getAllAccountsMock.mockReset();
+  initializeMock.mockReset();
+  initializeMock.mockResolvedValue(undefined);
 });
 
 describe('getAccessToken', () => {
