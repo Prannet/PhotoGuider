@@ -25,10 +25,12 @@ export async function uploadZipToSharePoint(filename: string, zipBlob: Blob): Pr
   const { uploadUrl } = await createSessionResp.json();
   const size = zipBlob.size;
 
+  // Single-request upload within the session; Graph supports up to ~60MiB per PUT.
+  // Fine for this app's typical session sizes; would need real chunking if that
+  // ever became a concern (e.g. much larger photo sets or higher-res captures).
   const uploadResp = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Length': String(size),
       'Content-Range': `bytes 0-${size - 1}/${size}`,
     },
     body: zipBlob,

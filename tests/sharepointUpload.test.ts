@@ -12,6 +12,10 @@ function fakeZipBlob(): Blob {
 
 describe('uploadZipToSharePoint', () => {
   beforeEach(() => {
+    // vi.restoreAllMocks() would wipe the mockResolvedValue set inside the vi.mock()
+    // factory above (a bare vi.fn() has no "original" implementation to restore to),
+    // breaking getAccessToken in the first test. clearAllMocks() only clears call
+    // history and preserves the configured mock implementation.
     vi.clearAllMocks();
   });
 
