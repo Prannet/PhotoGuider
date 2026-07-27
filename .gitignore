@@ -1,1 +1,4 @@
 .superpowers/
+.env
+node_modules/
+dist/
