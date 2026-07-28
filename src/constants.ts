@@ -14,7 +14,7 @@ export const VEHICLE_CATEGORIES: CategoryDef[] = [
   { key: 'back', label: 'Back', required: true, allowNotes: false },
   { key: 'tire', label: 'Tire', required: true, allowNotes: false },
   { key: 'interior', label: 'Interior', required: true, allowNotes: false },
-  { key: 'speedometer', label: 'Speedometer', required: true, allowNotes: false },
+  { key: 'speedometer', label: 'Odometer', required: true, allowNotes: false },
   { key: 'damages', label: 'Damages', required: false, allowNotes: true },
   { key: 'additional', label: 'Additional', required: false, allowNotes: true },
 ];

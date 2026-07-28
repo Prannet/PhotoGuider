@@ -7,7 +7,7 @@ Run this checklist on a real iPhone and a real Android phone before each release
 
 ## Vehicle session, happy path
 - [ ] Start a new session, choose Vehicle, enter a Unit # using the numeric keypad.
-- [ ] Take at least one photo in every required category (Front, Driver's Side, Passenger Side, Back, Tire, Interior, Speedometer).
+- [ ] Take at least one photo in every required category (Front, Driver's Side, Passenger Side, Back, Tire, Interior, Odometer).
 - [ ] Take two photos in Driver's Side and confirm both appear as separate thumbnails.
 - [ ] Add a Damages photo with a note, and confirm the note field appears only for Damages/Additional.
 - [ ] Confirm "Finish Session" stays disabled until all required categories have at least one photo, then enables.
