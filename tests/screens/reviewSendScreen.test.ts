@@ -48,7 +48,7 @@ describe('renderReviewSendScreen', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('shows Failed and does not clear the session when the send fails', async () => {
+  it('shows Failed and a warning, and does not clear the session, when the send fails', async () => {
     vi.mocked(uploadZipToSharePoint).mockRejectedValue(new Error('network down'));
     const session = createSession('vehicle', 'unit', '11802');
     const onDone = vi.fn();
@@ -60,8 +60,17 @@ describe('renderReviewSendScreen', () => {
     await flushMicrotasks();
 
     expect(container.querySelector('#send-sharepoint')!.textContent).toContain('Failed');
+    expect(container.textContent).toContain('Send failed');
     expect(clearSession).not.toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('shows no failure warning before any send has been attempted', () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const container = document.createElement('div');
+    renderReviewSendScreen(container, session, vi.fn());
+
+    expect(container.textContent).not.toContain('Send failed');
   });
 
   it('waits for both attempted actions before clearing when both are used', async () => {
@@ -110,5 +119,125 @@ describe('renderReviewSendScreen', () => {
     expect(buildSessionZip).toHaveBeenCalledTimes(1);
     expect(uploadZipToSharePoint).toHaveBeenCalledTimes(1);
     expect(shareZipViaEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a discard confirmation when Start Over is clicked', () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const container = document.createElement('div');
+    renderReviewSendScreen(container, session, vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+
+    expect(container.textContent).toContain('Discard session? All photos will be lost.');
+    expect(container.querySelector('#confirm-discard-button')).not.toBeNull();
+  });
+
+  it('returns to the normal review view without discarding when Cancel is clicked', () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const container = document.createElement('div');
+    renderReviewSendScreen(container, session, vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+    container.querySelector<HTMLButtonElement>('#cancel-discard-button')!.click();
+
+    expect(container.querySelector('#send-sharepoint')).not.toBeNull();
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  it('clears the session and calls onDone when Discard is confirmed', async () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const onDone = vi.fn();
+    const container = document.createElement('div');
+    renderReviewSendScreen(container, session, onDone);
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+    container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.click();
+    await flushMicrotasks();
+
+    expect(clearSession).toHaveBeenCalledWith(session.id);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables Start Over while a send is in flight', async () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const container = document.createElement('div');
+
+    let resolveUpload!: () => void;
+    vi.mocked(uploadZipToSharePoint).mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveUpload = resolve;
+      })
+    );
+
+    renderReviewSendScreen(container, session, vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#send-sharepoint')!.click();
+    await flushMicrotasks();
+
+    const startOverButton = container.querySelector<HTMLButtonElement>('#start-over-button')!;
+    expect(startOverButton.disabled).toBe(true);
+
+    startOverButton.click();
+    expect(container.querySelector('#confirm-discard-button')).toBeNull();
+
+    resolveUpload();
+    await flushMicrotasks();
+  });
+
+  it('ignores a second Discard-confirm click while the first is still in flight', async () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const onDone = vi.fn();
+    const container = document.createElement('div');
+
+    let resolveClear!: () => void;
+    vi.mocked(clearSession).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveClear = resolve;
+      })
+    );
+
+    renderReviewSendScreen(container, session, onDone);
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+    const confirmButton = container.querySelector<HTMLButtonElement>('#confirm-discard-button')!;
+    confirmButton.click();
+    confirmButton.click();
+    await flushMicrotasks();
+
+    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(onDone).not.toHaveBeenCalled();
+
+    resolveClear();
+    await flushMicrotasks();
+
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a Cancel click that arrives while Discard is still in flight', async () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const onDone = vi.fn();
+    const container = document.createElement('div');
+
+    let resolveClear!: () => void;
+    vi.mocked(clearSession).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveClear = resolve;
+      })
+    );
+
+    renderReviewSendScreen(container, session, onDone);
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+    container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.click();
+    container.querySelector<HTMLButtonElement>('#cancel-discard-button')!.click();
+    await flushMicrotasks();
+
+    expect(container.querySelector('#confirm-discard-button')).not.toBeNull();
+    expect(onDone).not.toHaveBeenCalled();
+
+    resolveClear();
+    await flushMicrotasks();
+
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
