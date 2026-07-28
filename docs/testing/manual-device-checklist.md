@@ -15,6 +15,7 @@ Run this checklist on a real iPhone and a real Android phone before each release
 ## Other Item session
 - [ ] Start a new session, choose Other Item, enter a Lot # using the text keyboard (e.g. `LOT-A22`).
 - [ ] Confirm the category list shown is Front, Left Side, Right Side, Back, Detail/Close-up, Damages, Additional (no Tire/Interior/Speedometer).
+- [ ] Confirm "Finish Session" is disabled until Front has a photo, then enables — Left Side, Right Side, Back, and Detail/Close-up are optional and do not block it.
 
 ## Offline capture
 - [ ] Turn on airplane mode mid-session, continue taking photos in remaining categories, confirm no errors and progress is retained.

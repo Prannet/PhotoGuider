@@ -69,11 +69,11 @@ describe('requiredCategoriesComplete', () => {
     expect(requiredCategoriesComplete(session)).toBe(true);
   });
 
-  it('uses the shorter other-item required list', () => {
+  it('requires only Front for other-item sessions', () => {
     let session = createSession('other', 'lot', 'LOTA22');
-    for (const key of ['front', 'leftSide', 'rightSide', 'back', 'detail']) {
-      session = addPhoto(session, key, fakeBlob());
-    }
+    expect(requiredCategoriesComplete(session)).toBe(false);
+
+    session = addPhoto(session, 'front', fakeBlob());
     expect(requiredCategoriesComplete(session)).toBe(true);
   });
 });
