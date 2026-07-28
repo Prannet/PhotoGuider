@@ -25,7 +25,7 @@ Run this checklist on a real iPhone and a real Android phone before each release
 ## Sending
 - [ ] With connectivity restored, tap "Send to SharePoint," sign in with a real work account on first use, and confirm the zip appears in the target SharePoint folder.
 - [ ] Tap "Send via Email," confirm the phone's native share sheet opens with the zip attached, and confirm sending completes.
-- [ ] Turn on airplane mode, attempt a send, confirm it shows "Failed — Retry" plus a visible "Send failed" warning, and the session is not lost; turn connectivity back on and retry successfully.
+- [ ] Turn on airplane mode, attempt a send, confirm it shows "Failed — Retry" and the session is not lost; turn connectivity back on and retry successfully.
 - [ ] On the Review & Send screen, confirm "Start Over" is disabled while a send is in progress, then tap it once idle, confirm it, and confirm the session is discarded and the app returns to the start screen.
 
 ## Duplicate identifier

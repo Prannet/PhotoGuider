@@ -103,16 +103,9 @@ export function renderReviewSendScreen(container: HTMLElement, session: Session,
       .map((c) => `<li>${escapeHtml(c.label)}: ${photoCountFor(session, c.key)}</li>`)
       .join('');
 
-    const anyFailed = statuses.sharepoint === 'failed' || statuses.email === 'failed';
-
     container.innerHTML = `
       <h1>Review Session — ${escapeHtml(session.identifier)}</h1>
       <ul>${summary}</ul>
-      ${
-        anyFailed
-          ? '<p style="color:#b00020;">Send failed — check your connection and tap the button again to retry.</p>'
-          : ''
-      }
       <button id="send-sharepoint" ${statuses.sharepoint === 'sending' ? 'disabled' : ''}>
         Send to SharePoint ${statusLabel(statuses.sharepoint)}
       </button>

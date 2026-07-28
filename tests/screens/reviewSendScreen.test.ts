@@ -48,7 +48,7 @@ describe('renderReviewSendScreen', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('shows Failed and a warning, and does not clear the session, when the send fails', async () => {
+  it('shows Failed and does not clear the session when the send fails', async () => {
     vi.mocked(uploadZipToSharePoint).mockRejectedValue(new Error('network down'));
     const session = createSession('vehicle', 'unit', '11802');
     const onDone = vi.fn();
@@ -60,17 +60,8 @@ describe('renderReviewSendScreen', () => {
     await flushMicrotasks();
 
     expect(container.querySelector('#send-sharepoint')!.textContent).toContain('Failed');
-    expect(container.textContent).toContain('Send failed');
     expect(clearSession).not.toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
-  });
-
-  it('shows no failure warning before any send has been attempted', () => {
-    const session = createSession('vehicle', 'unit', '11802');
-    const container = document.createElement('div');
-    renderReviewSendScreen(container, session, vi.fn());
-
-    expect(container.textContent).not.toContain('Send failed');
   });
 
   it('waits for both attempted actions before clearing when both are used', async () => {
