@@ -169,9 +169,9 @@ describe('renderChecklistHub', () => {
 
     container.querySelector<HTMLButtonElement>('#finish-button')!.click();
 
-    // Navigate to the discard-confirmation view and tap Discard while Finish is in flight.
+    // Tap Start Over while Finish is in flight. With the guard in place this no longer
+    // even reaches the discard-confirmation view, so there is no confirm button to tap.
     container.querySelector<HTMLButtonElement>('#discard-button')!.click();
-    container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.click();
     await flushMicrotasks();
 
     // The discard tap should have been ignored entirely (Finish tapped first, still in flight).
@@ -220,5 +220,77 @@ describe('renderChecklistHub', () => {
 
     expect(clearSession).toHaveBeenCalledWith(session.id);
     expect(onDiscard).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a category row click that arrives while Finish Session is still in flight', async () => {
+    const container = document.createElement('div');
+    let session = createSession('vehicle', 'unit', '11802');
+    for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
+      session = addPhoto(session, key, fakeBlob());
+    }
+    const onOpenCategory = vi.fn();
+    const onFinish = vi.fn();
+
+    // Make saveSession resolve only when we say so, so we can click a category row
+    // while the Finish action is still pending.
+    let resolveSave: () => void;
+    vi.mocked(saveSession).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveSave = resolve;
+      })
+    );
+
+    renderChecklistHub(container, session, onOpenCategory, onFinish, vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#finish-button')!.click();
+
+    // Tap a category row while Finish is still in flight.
+    container.querySelector<HTMLDivElement>('[data-category="leftSide"]')!.click();
+
+    // The category tap should have been ignored entirely (Finish tapped first, still in flight).
+    expect(onOpenCategory).not.toHaveBeenCalled();
+
+    // Now let Finish Session's saveSession resolve.
+    resolveSave!();
+    await flushMicrotasks();
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a Start Over click that arrives while Finish Session is still in flight', async () => {
+    const container = document.createElement('div');
+    let session = createSession('vehicle', 'unit', '11802');
+    for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
+      session = addPhoto(session, key, fakeBlob());
+    }
+    const onFinish = vi.fn();
+
+    // Make saveSession resolve only when we say so, so we can click Start Over
+    // while the Finish action is still pending.
+    let resolveSave: () => void;
+    vi.mocked(saveSession).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveSave = resolve;
+      })
+    );
+
+    renderChecklistHub(container, session, vi.fn(), onFinish, vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#finish-button')!.click();
+
+    // Tap Start Over while Finish is still in flight.
+    container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+
+    // The Start Over tap should have been ignored entirely: still on the normal hub view.
+    expect(container.querySelector('#confirm-discard-button')).toBeNull();
+    expect(container.querySelector('#finish-button')).not.toBeNull();
+
+    // Now let Finish Session's saveSession resolve.
+    resolveSave!();
+    await flushMicrotasks();
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledTimes(1);
   });
 });

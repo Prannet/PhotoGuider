@@ -69,6 +69,7 @@ export function renderChecklistHub(
 
     container.querySelectorAll<HTMLDivElement>('.category-row').forEach((row) => {
       row.addEventListener('click', () => {
+        if (actionInProgress) return;
         onOpenCategory(row.dataset.category!);
       });
     });
@@ -86,6 +87,7 @@ export function renderChecklistHub(
     });
 
     container.querySelector<HTMLButtonElement>('#discard-button')!.addEventListener('click', () => {
+      if (actionInProgress) return;
       confirmingDiscard = true;
       draw();
     });
