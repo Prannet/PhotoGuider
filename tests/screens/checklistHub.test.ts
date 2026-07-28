@@ -147,43 +147,40 @@ describe('renderChecklistHub', () => {
     expect(onFinish).toHaveBeenCalledTimes(1);
   });
 
-  it('ignores a Discard-confirm click that arrives while Finish Session is still in flight, leaving Finish to complete', async () => {
+  it('ignores a second Discard-confirm click while the first is still in flight', async () => {
     const container = document.createElement('div');
-    let session = createSession('vehicle', 'unit', '11802');
-    for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
-      session = addPhoto(session, key, fakeBlob());
-    }
-    const onFinish = vi.fn();
+    const session = createSession('vehicle', 'unit', '11802');
     const onDiscard = vi.fn();
 
-    // Make saveSession resolve only when we say so, so we can click Discard-confirm
-    // while the Finish action is still pending.
-    let resolveSave: () => void;
-    vi.mocked(saveSession).mockReturnValueOnce(
+    // Make clearSession resolve only when we say so, so we can double-click
+    // Discard-confirm before the first call resolves.
+    let resolveClear: () => void;
+    vi.mocked(clearSession).mockReturnValueOnce(
       new Promise<void>((resolve) => {
-        resolveSave = resolve;
+        resolveClear = resolve;
       })
     );
 
-    renderChecklistHub(container, session, vi.fn(), onFinish, onDiscard);
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), onDiscard);
 
-    container.querySelector<HTMLButtonElement>('#finish-button')!.click();
-
-    // Tap Start Over while Finish is in flight. With the guard in place this no longer
-    // even reaches the discard-confirmation view, so there is no confirm button to tap.
     container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+    const confirmButton = container.querySelector<HTMLButtonElement>('#confirm-discard-button')!;
+    confirmButton.click();
+    confirmButton.click();
     await flushMicrotasks();
 
-    // The discard tap should have been ignored entirely (Finish tapped first, still in flight).
-    expect(clearSession).not.toHaveBeenCalled();
+    // The first click already called clearSession synchronously (only its resolution
+    // is pending); the second click should have been ignored (guarded by
+    // actionInProgress), so clearSession was called exactly once, not twice, and
+    // onDiscard hasn't fired yet since the first call hasn't resolved.
+    expect(clearSession).toHaveBeenCalledTimes(1);
     expect(onDiscard).not.toHaveBeenCalled();
 
-    // Now let Finish Session's saveSession resolve.
-    resolveSave!();
+    resolveClear!();
     await flushMicrotasks();
 
-    expect(saveSession).toHaveBeenCalledTimes(1);
-    expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(clearSession).toHaveBeenCalledTimes(1);
+    expect(onDiscard).toHaveBeenCalledTimes(1);
   });
 
   it('ignores a Cancel click that arrives while a Discard is still in flight, letting the discard complete', async () => {
