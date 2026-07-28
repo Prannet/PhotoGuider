@@ -26,10 +26,11 @@ describe('saveSession / getActiveSession', () => {
     expect(active?.identifier).toBe('11802');
   });
 
-  it('does not return a session marked complete', async () => {
+  it('returns a session marked complete (finished but not yet sent)', async () => {
     const session = { ...createSession('vehicle', 'unit', '11802'), status: 'complete' as const };
     await saveSession(session);
-    expect(await getActiveSession()).toBeUndefined();
+    const active = await getActiveSession();
+    expect(active?.id).toBe(session.id);
   });
 });
 

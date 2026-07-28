@@ -42,7 +42,7 @@ export async function saveSession(session: Session): Promise<void> {
 export async function getActiveSession(): Promise<Session | undefined> {
   const db = await getDB();
   const all = await db.getAll('sessions');
-  return all.find((s) => s.status === 'in-progress');
+  return all.find((s) => s.status === 'in-progress' || s.status === 'complete');
 }
 
 export async function clearSession(sessionId: string): Promise<void> {
