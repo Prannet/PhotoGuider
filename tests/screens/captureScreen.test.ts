@@ -146,4 +146,18 @@ describe('renderCaptureScreen', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
   });
+
+  it('revokes all cached object URLs for the category when Done is clicked', async () => {
+    const container = document.createElement('div');
+    const session = createSession('vehicle', 'unit', '11802');
+    renderCaptureScreen(container, session, 'front', vi.fn());
+
+    await selectFile(container.querySelector<HTMLInputElement>('#camera-input')!, fakeFile('first.jpg'));
+    await selectFile(container.querySelector<HTMLInputElement>('#camera-input')!, fakeFile('second.jpg'));
+    expect(container.querySelectorAll('.thumb')).toHaveLength(2);
+
+    container.querySelector<HTMLButtonElement>('#done-button')!.click();
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
+  });
 });

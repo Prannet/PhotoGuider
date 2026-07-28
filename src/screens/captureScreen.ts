@@ -44,6 +44,12 @@ export function renderCaptureScreen(
     }
   }
 
+  function revokeAllPhotoUrls(): void {
+    for (const photoId of Array.from(photoUrls.keys())) {
+      revokePhotoUrl(photoId);
+    }
+  }
+
   async function persist() {
     try {
       await saveSession(session);
@@ -126,6 +132,7 @@ export function renderCaptureScreen(
     });
 
     container.querySelector<HTMLButtonElement>('#done-button')!.addEventListener('click', () => {
+      revokeAllPhotoUrls();
       onDone(session);
     });
   }
