@@ -3,6 +3,15 @@ import { categoriesFor } from '../constants';
 import { addPhoto } from '../session/session';
 import { saveSession } from '../session/sessionStore';
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function renderCaptureScreen(
   container: HTMLElement,
   initialSession: Session,
@@ -12,9 +21,27 @@ export function renderCaptureScreen(
   let session = initialSession;
   let storageWarning = false;
   const category = categoriesFor(session.sessionType).find((c) => c.key === categoryKey)!;
+  const photoUrls = new Map<string, string>();
 
   function photosInCategory() {
     return session.photos.filter((p) => p.categoryKey === categoryKey);
+  }
+
+  function urlForPhoto(photo: { id: string; blob: Blob }): string {
+    let url = photoUrls.get(photo.id);
+    if (!url) {
+      url = URL.createObjectURL(photo.blob);
+      photoUrls.set(photo.id, url);
+    }
+    return url;
+  }
+
+  function revokePhotoUrl(photoId: string): void {
+    const url = photoUrls.get(photoId);
+    if (url) {
+      URL.revokeObjectURL(url);
+      photoUrls.delete(photoId);
+    }
   }
 
   async function persist() {
@@ -30,23 +57,24 @@ export function renderCaptureScreen(
     const photos = photosInCategory();
 
     const thumbs = photos
-      .map(
-        (photo) => `
-          <div class="thumb" data-photo-id="${photo.id}">
-            <img src="${URL.createObjectURL(photo.blob)}" alt="${category.label} photo" />
-            <button data-remove="${photo.id}" aria-label="Remove photo">&times;</button>
+      .map((photo) => {
+        const photoId = escapeHtml(photo.id);
+        return `
+          <div class="thumb" data-photo-id="${photoId}">
+            <img src="${urlForPhoto(photo)}" alt="${escapeHtml(category.label)} photo" />
+            <button data-remove="${photoId}" aria-label="Remove photo">&times;</button>
             ${
               category.allowNotes
-                ? `<input data-note="${photo.id}" placeholder="Note (optional)" value="${photo.note ?? ''}" />`
+                ? `<input data-note="${photoId}" placeholder="Note (optional)" value="${escapeHtml(photo.note ?? '')}" />`
                 : ''
             }
           </div>
-        `
-      )
+        `;
+      })
       .join('');
 
     container.innerHTML = `
-      <h1>${category.label}</h1>
+      <h1>${escapeHtml(category.label)}</h1>
       <p>${photos.length} photo${photos.length === 1 ? '' : 's'} taken</p>
       <p style="font-size:0.8rem; color:#666;">
         If the camera doesn't open, check your phone’s camera permission for this app/site in Settings.
@@ -79,6 +107,7 @@ export function renderCaptureScreen(
     container.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((button) => {
       button.addEventListener('click', async () => {
         const photoId = button.dataset.remove!;
+        revokePhotoUrl(photoId);
         session = { ...session, photos: session.photos.filter((p) => p.id !== photoId) };
         await persist();
         draw();
