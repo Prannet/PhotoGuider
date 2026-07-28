@@ -23,6 +23,7 @@ export function renderChecklistHub(
       `;
 
       container.querySelector<HTMLButtonElement>('#cancel-discard-button')!.addEventListener('click', () => {
+        if (actionInProgress) return;
         confirmingDiscard = false;
         draw();
       });

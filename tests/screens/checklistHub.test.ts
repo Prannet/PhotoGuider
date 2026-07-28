@@ -185,4 +185,40 @@ describe('renderChecklistHub', () => {
     expect(saveSession).toHaveBeenCalledTimes(1);
     expect(onFinish).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores a Cancel click that arrives while a Discard is still in flight, letting the discard complete', async () => {
+    const container = document.createElement('div');
+    const session = createSession('vehicle', 'unit', '11802');
+    const onDiscard = vi.fn();
+
+    // Make clearSession resolve only when we say so, so we can click Cancel
+    // while the Discard action is still pending.
+    let resolveClear: () => void;
+    vi.mocked(clearSession).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveClear = resolve;
+      })
+    );
+
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), onDiscard);
+
+    container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+    container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.click();
+
+    // Tap Cancel while the discard is still in flight.
+    container.querySelector<HTMLButtonElement>('#cancel-discard-button')!.click();
+    await flushMicrotasks();
+
+    // Cancel should have been ignored entirely: still on the confirm-discard view.
+    expect(container.querySelector('#confirm-discard-button')).not.toBeNull();
+    expect(container.querySelector('#finish-button')).toBeNull();
+    expect(onDiscard).not.toHaveBeenCalled();
+
+    // Now let the original discard's clearSession resolve.
+    resolveClear!();
+    await flushMicrotasks();
+
+    expect(clearSession).toHaveBeenCalledWith(session.id);
+    expect(onDiscard).toHaveBeenCalledTimes(1);
+  });
 });
