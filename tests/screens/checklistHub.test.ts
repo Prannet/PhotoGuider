@@ -1,12 +1,25 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createSession, addPhoto } from '../../src/session/session';
 import { renderChecklistHub } from '../../src/screens/checklistHub';
+import { saveSession } from '../../src/session/sessionStore';
+
+vi.mock('../../src/session/sessionStore', () => ({
+  saveSession: vi.fn().mockResolvedValue(undefined),
+}));
 
 function fakeBlob(): Blob {
   return new Blob(['x'], { type: 'image/jpeg' });
 }
 
+function flushMicrotasks() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 describe('renderChecklistHub', () => {
+  beforeEach(() => {
+    vi.mocked(saveSession).mockClear().mockResolvedValue(undefined);
+  });
+
   it('disables Finish Session until every required category has a photo', () => {
     const container = document.createElement('div');
     const session = createSession('vehicle', 'unit', '11802');
@@ -50,7 +63,7 @@ describe('renderChecklistHub', () => {
     expect(onOpenCategory).toHaveBeenCalledWith('leftSide');
   });
 
-  it('calls onFinish when Finish Session is clicked while enabled', () => {
+  it('persists the session as complete and calls onFinish with the updated session when Finish Session is clicked while enabled', async () => {
     const container = document.createElement('div');
     let session = createSession('vehicle', 'unit', '11802');
     for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
@@ -60,7 +73,11 @@ describe('renderChecklistHub', () => {
     renderChecklistHub(container, session, vi.fn(), onFinish);
 
     container.querySelector<HTMLButtonElement>('#finish-button')!.click();
+    await flushMicrotasks();
 
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(saveSession).toHaveBeenCalledWith(expect.objectContaining({ id: session.id, status: 'complete' }));
     expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(onFinish.mock.calls[0][0].status).toBe('complete');
   });
 });

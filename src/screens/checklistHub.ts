@@ -1,12 +1,13 @@
 import type { Session } from '../types';
 import { categoriesFor } from '../constants';
 import { photoCountFor, requiredCategoriesComplete } from '../session/session';
+import { saveSession } from '../session/sessionStore';
 
 export function renderChecklistHub(
   container: HTMLElement,
   session: Session,
   onOpenCategory: (categoryKey: string) => void,
-  onFinish: () => void
+  onFinish: (session: Session) => void
 ): void {
   const categories = categoriesFor(session.sessionType);
   const canFinish = requiredCategoriesComplete(session);
@@ -38,7 +39,10 @@ export function renderChecklistHub(
     });
   });
 
-  container.querySelector<HTMLButtonElement>('#finish-button')!.addEventListener('click', () => {
-    if (canFinish) onFinish();
+  container.querySelector<HTMLButtonElement>('#finish-button')!.addEventListener('click', async () => {
+    if (!canFinish) return;
+    const updated: Session = { ...session, status: 'complete' };
+    await saveSession(updated);
+    onFinish(updated);
   });
 }

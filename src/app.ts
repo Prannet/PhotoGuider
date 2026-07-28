@@ -31,7 +31,7 @@ export function createApp(container: HTMLElement) {
           container,
           state.session,
           (categoryKey) => navigate({ screen: 'capture', session: state.session, categoryKey }),
-          () => navigate({ screen: 'review', session: state.session })
+          (updatedSession) => navigate({ screen: 'review', session: updatedSession })
         );
         break;
       case 'capture':
