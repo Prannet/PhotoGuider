@@ -128,4 +128,61 @@ describe('renderChecklistHub', () => {
     expect(clearSession).toHaveBeenCalledWith(session.id);
     expect(onDiscard).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores a second Finish Session click while the first is still in flight', async () => {
+    const container = document.createElement('div');
+    let session = createSession('vehicle', 'unit', '11802');
+    for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
+      session = addPhoto(session, key, fakeBlob());
+    }
+    const onFinish = vi.fn();
+    renderChecklistHub(container, session, vi.fn(), onFinish, vi.fn());
+
+    const finishButton = container.querySelector<HTMLButtonElement>('#finish-button')!;
+    finishButton.click();
+    finishButton.click();
+    await flushMicrotasks();
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a Discard-confirm click that arrives while Finish Session is still in flight, leaving Finish to complete', async () => {
+    const container = document.createElement('div');
+    let session = createSession('vehicle', 'unit', '11802');
+    for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
+      session = addPhoto(session, key, fakeBlob());
+    }
+    const onFinish = vi.fn();
+    const onDiscard = vi.fn();
+
+    // Make saveSession resolve only when we say so, so we can click Discard-confirm
+    // while the Finish action is still pending.
+    let resolveSave: () => void;
+    vi.mocked(saveSession).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveSave = resolve;
+      })
+    );
+
+    renderChecklistHub(container, session, vi.fn(), onFinish, onDiscard);
+
+    container.querySelector<HTMLButtonElement>('#finish-button')!.click();
+
+    // Navigate to the discard-confirmation view and tap Discard while Finish is in flight.
+    container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+    container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.click();
+    await flushMicrotasks();
+
+    // The discard tap should have been ignored entirely (Finish tapped first, still in flight).
+    expect(clearSession).not.toHaveBeenCalled();
+    expect(onDiscard).not.toHaveBeenCalled();
+
+    // Now let Finish Session's saveSession resolve.
+    resolveSave!();
+    await flushMicrotasks();
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
 });

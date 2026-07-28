@@ -11,6 +11,7 @@ export function renderChecklistHub(
   onDiscard: () => void
 ): void {
   let confirmingDiscard = false;
+  let actionInProgress = false;
 
   function draw(): void {
     if (confirmingDiscard) {
@@ -27,8 +28,14 @@ export function renderChecklistHub(
       });
 
       container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.addEventListener('click', async () => {
-        await clearSession(session.id);
-        onDiscard();
+        if (actionInProgress) return;
+        actionInProgress = true;
+        try {
+          await clearSession(session.id);
+          onDiscard();
+        } finally {
+          actionInProgress = false;
+        }
       });
 
       return;
@@ -66,10 +73,15 @@ export function renderChecklistHub(
     });
 
     container.querySelector<HTMLButtonElement>('#finish-button')!.addEventListener('click', async () => {
-      if (!canFinish) return;
-      const updated: Session = { ...session, status: 'complete' };
-      await saveSession(updated);
-      onFinish(updated);
+      if (!canFinish || actionInProgress) return;
+      actionInProgress = true;
+      try {
+        const updated: Session = { ...session, status: 'complete' };
+        await saveSession(updated);
+        onFinish(updated);
+      } finally {
+        actionInProgress = false;
+      }
     });
 
     container.querySelector<HTMLButtonElement>('#discard-button')!.addEventListener('click', () => {
