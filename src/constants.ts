@@ -9,8 +9,8 @@ export interface CategoryDef {
 
 export const VEHICLE_CATEGORIES: CategoryDef[] = [
   { key: 'front', label: 'Front', required: true, allowNotes: false },
-  { key: 'leftSide', label: 'Left Side', required: true, allowNotes: false },
-  { key: 'rightSide', label: 'Right Side', required: true, allowNotes: false },
+  { key: 'leftSide', label: "Driver's Side", required: true, allowNotes: false },
+  { key: 'rightSide', label: 'Passenger Side', required: true, allowNotes: false },
   { key: 'back', label: 'Back', required: true, allowNotes: false },
   { key: 'tire', label: 'Tire', required: true, allowNotes: false },
   { key: 'interior', label: 'Interior', required: true, allowNotes: false },
