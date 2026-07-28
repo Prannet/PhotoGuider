@@ -7,15 +7,7 @@ import { uploadZipToSharePoint } from '../upload/sharepointUpload';
 import { shareZipViaEmail } from '../upload/shareEmail';
 import { clearSession, recordIdentifierSent } from '../session/sessionStore';
 import { isSessionReadyToClear, type SendStatusMap, type SendActionKey } from '../session/sendStatus';
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import { escapeHtml } from '../html';
 
 export function renderReviewSendScreen(container: HTMLElement, session: Session, onDone: () => void): void {
   const statuses: SendStatusMap = { sharepoint: 'idle', email: 'idle' };

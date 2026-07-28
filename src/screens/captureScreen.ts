@@ -2,15 +2,7 @@ import type { Session } from '../types';
 import { categoriesFor } from '../constants';
 import { addPhoto } from '../session/session';
 import { saveSession } from '../session/sessionStore';
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import { escapeHtml } from '../html';
 
 export function renderCaptureScreen(
   container: HTMLElement,
