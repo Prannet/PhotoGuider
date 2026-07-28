@@ -23,7 +23,7 @@ export const OTHER_ITEM_CATEGORIES: CategoryDef[] = [
   { key: 'front', label: 'Front', required: true, allowNotes: false },
   { key: 'leftSide', label: 'Left Side', required: false, allowNotes: false },
   { key: 'rightSide', label: 'Right Side', required: false, allowNotes: false },
-  { key: 'back', label: 'Back', required: false, allowNotes: false },
+  { key: 'back', label: 'Back', required: true, allowNotes: false },
   { key: 'detail', label: 'Detail/Close-up', required: false, allowNotes: false },
   { key: 'damages', label: 'Damages', required: false, allowNotes: true },
   { key: 'additional', label: 'Additional', required: false, allowNotes: true },

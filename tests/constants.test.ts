@@ -23,13 +23,15 @@ describe('categoriesFor', () => {
     const categories = categoriesFor('other');
     const keys = categories.map((c) => c.key);
     expect(keys).toEqual(['front', 'leftSide', 'rightSide', 'back', 'detail', 'damages', 'additional']);
-    expect(categories.filter((c) => c.required)).toHaveLength(1);
+    expect(categories.filter((c) => c.required)).toHaveLength(2);
   });
 
-  it('requires only Front for other-item sessions', () => {
+  it('requires only Front and Back for other-item sessions', () => {
     const categories = categoriesFor('other');
-    expect(categories.find((c) => c.key === 'front')!.required).toBe(true);
-    for (const key of ['leftSide', 'rightSide', 'back', 'detail']) {
+    for (const key of ['front', 'back']) {
+      expect(categories.find((c) => c.key === key)!.required).toBe(true);
+    }
+    for (const key of ['leftSide', 'rightSide', 'detail']) {
       expect(categories.find((c) => c.key === key)!.required).toBe(false);
     }
   });

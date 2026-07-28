@@ -69,11 +69,14 @@ describe('requiredCategoriesComplete', () => {
     expect(requiredCategoriesComplete(session)).toBe(true);
   });
 
-  it('requires only Front for other-item sessions', () => {
+  it('requires only Front and Back for other-item sessions', () => {
     let session = createSession('other', 'lot', 'LOTA22');
     expect(requiredCategoriesComplete(session)).toBe(false);
 
     session = addPhoto(session, 'front', fakeBlob());
+    expect(requiredCategoriesComplete(session)).toBe(false);
+
+    session = addPhoto(session, 'back', fakeBlob());
     expect(requiredCategoriesComplete(session)).toBe(true);
   });
 });
