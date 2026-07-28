@@ -13,7 +13,9 @@ export type AppState =
   | { screen: 'review'; session: Session };
 
 export function resolveInitialState(existing: Session | undefined): AppState {
-  return existing ? { screen: 'hub', session: existing } : { screen: 'start' };
+  if (!existing) return { screen: 'start' };
+  if (existing.status === 'complete') return { screen: 'review', session: existing };
+  return { screen: 'hub', session: existing };
 }
 
 export function createApp(container: HTMLElement) {

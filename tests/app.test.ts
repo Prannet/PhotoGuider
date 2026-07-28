@@ -11,4 +11,9 @@ describe('resolveInitialState', () => {
     const session = createSession('vehicle', 'unit', '11802');
     expect(resolveInitialState(session)).toEqual({ screen: 'hub', session });
   });
+
+  it('resumes at review & send when a session has been finished but not yet sent', () => {
+    const session = { ...createSession('vehicle', 'unit', '11802'), status: 'complete' as const };
+    expect(resolveInitialState(session)).toEqual({ screen: 'review', session });
+  });
 });
