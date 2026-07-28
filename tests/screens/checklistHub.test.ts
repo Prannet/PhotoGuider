@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createSession, addPhoto } from '../../src/session/session';
 import { renderChecklistHub } from '../../src/screens/checklistHub';
-import { saveSession } from '../../src/session/sessionStore';
+import { saveSession, clearSession } from '../../src/session/sessionStore';
 
 vi.mock('../../src/session/sessionStore', () => ({
   saveSession: vi.fn().mockResolvedValue(undefined),
+  clearSession: vi.fn().mockResolvedValue(undefined),
 }));
 
 function fakeBlob(): Blob {
@@ -18,12 +19,13 @@ function flushMicrotasks() {
 describe('renderChecklistHub', () => {
   beforeEach(() => {
     vi.mocked(saveSession).mockClear().mockResolvedValue(undefined);
+    vi.mocked(clearSession).mockClear().mockResolvedValue(undefined);
   });
 
   it('disables Finish Session until every required category has a photo', () => {
     const container = document.createElement('div');
     const session = createSession('vehicle', 'unit', '11802');
-    renderChecklistHub(container, session, vi.fn(), vi.fn());
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), vi.fn());
 
     const finishButton = container.querySelector<HTMLButtonElement>('#finish-button')!;
     expect(finishButton.disabled).toBe(true);
@@ -35,7 +37,7 @@ describe('renderChecklistHub', () => {
     for (const key of ['front', 'leftSide', 'rightSide', 'back', 'tire', 'interior', 'speedometer']) {
       session = addPhoto(session, key, fakeBlob());
     }
-    renderChecklistHub(container, session, vi.fn(), vi.fn());
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), vi.fn());
 
     const finishButton = container.querySelector<HTMLButtonElement>('#finish-button')!;
     expect(finishButton.disabled).toBe(false);
@@ -46,7 +48,7 @@ describe('renderChecklistHub', () => {
     let session = createSession('vehicle', 'unit', '11802');
     session = addPhoto(session, 'front', fakeBlob());
     session = addPhoto(session, 'front', fakeBlob());
-    renderChecklistHub(container, session, vi.fn(), vi.fn());
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), vi.fn());
 
     const row = container.querySelector('[data-category="front"]')!;
     expect(row.textContent).toContain('2 photos');
@@ -56,7 +58,7 @@ describe('renderChecklistHub', () => {
     const container = document.createElement('div');
     const session = createSession('vehicle', 'unit', '11802');
     const onOpenCategory = vi.fn();
-    renderChecklistHub(container, session, onOpenCategory, vi.fn());
+    renderChecklistHub(container, session, onOpenCategory, vi.fn(), vi.fn());
 
     container.querySelector<HTMLDivElement>('[data-category="leftSide"]')!.click();
 
@@ -70,7 +72,7 @@ describe('renderChecklistHub', () => {
       session = addPhoto(session, key, fakeBlob());
     }
     const onFinish = vi.fn();
-    renderChecklistHub(container, session, vi.fn(), onFinish);
+    renderChecklistHub(container, session, vi.fn(), onFinish, vi.fn());
 
     container.querySelector<HTMLButtonElement>('#finish-button')!.click();
     await flushMicrotasks();
@@ -79,5 +81,51 @@ describe('renderChecklistHub', () => {
     expect(saveSession).toHaveBeenCalledWith(expect.objectContaining({ id: session.id, status: 'complete' }));
     expect(onFinish).toHaveBeenCalledTimes(1);
     expect(onFinish.mock.calls[0][0].status).toBe('complete');
+  });
+
+  it('does not show the discard confirmation until Start Over is clicked', () => {
+    const container = document.createElement('div');
+    const session = createSession('vehicle', 'unit', '11802');
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), vi.fn());
+
+    expect(container.querySelector('#confirm-discard-button')).toBeNull();
+    expect(container.querySelector('#discard-button')).not.toBeNull();
+  });
+
+  it('shows a discard confirmation when Start Over is clicked', () => {
+    const container = document.createElement('div');
+    const session = createSession('vehicle', 'unit', '11802');
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+
+    expect(container.textContent).toContain('Discard session? All photos will be lost.');
+    expect(container.querySelector('#confirm-discard-button')).not.toBeNull();
+  });
+
+  it('returns to the normal hub view without discarding when Cancel is clicked', () => {
+    const container = document.createElement('div');
+    const session = createSession('vehicle', 'unit', '11802');
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), vi.fn());
+
+    container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+    container.querySelector<HTMLButtonElement>('#cancel-discard-button')!.click();
+
+    expect(container.querySelector('#finish-button')).not.toBeNull();
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  it('clears the session and calls onDiscard when Discard is confirmed', async () => {
+    const container = document.createElement('div');
+    const session = createSession('vehicle', 'unit', '11802');
+    const onDiscard = vi.fn();
+    renderChecklistHub(container, session, vi.fn(), vi.fn(), onDiscard);
+
+    container.querySelector<HTMLButtonElement>('#discard-button')!.click();
+    container.querySelector<HTMLButtonElement>('#confirm-discard-button')!.click();
+    await flushMicrotasks();
+
+    expect(clearSession).toHaveBeenCalledWith(session.id);
+    expect(onDiscard).toHaveBeenCalledTimes(1);
   });
 });
