@@ -20,7 +20,7 @@ describe('renderIdentifierScreen', () => {
 
   it('defaults to Unit # with a numeric input', () => {
     const container = document.createElement('div');
-    renderIdentifierScreen(container, 'vehicle', vi.fn());
+    renderIdentifierScreen(container, 'vehicle', vi.fn(), vi.fn());
 
     const input = container.querySelector<HTMLInputElement>('#identifier-input')!;
     expect(input.type).toBe('tel');
@@ -28,7 +28,7 @@ describe('renderIdentifierScreen', () => {
 
   it('switches to a text input when Lot # is selected', () => {
     const container = document.createElement('div');
-    renderIdentifierScreen(container, 'vehicle', vi.fn());
+    renderIdentifierScreen(container, 'vehicle', vi.fn(), vi.fn());
 
     container.querySelector<HTMLButtonElement>('[data-type="lot"]')!.click();
 
@@ -39,7 +39,7 @@ describe('renderIdentifierScreen', () => {
   it('shows a warning and does not create a session when the field is empty', async () => {
     const container = document.createElement('div');
     const onCreated = vi.fn();
-    renderIdentifierScreen(container, 'vehicle', onCreated);
+    renderIdentifierScreen(container, 'vehicle', onCreated, vi.fn());
 
     container.querySelector<HTMLButtonElement>('#continue-button')!.click();
     await flushMicrotasks();
@@ -51,7 +51,7 @@ describe('renderIdentifierScreen', () => {
   it('shows a warning and does not create a session when the identifier is only punctuation/whitespace', async () => {
     const container = document.createElement('div');
     const onCreated = vi.fn();
-    renderIdentifierScreen(container, 'vehicle', onCreated);
+    renderIdentifierScreen(container, 'vehicle', onCreated, vi.fn());
 
     container.querySelector<HTMLInputElement>('#identifier-input')!.value = '---';
     container.querySelector<HTMLButtonElement>('#continue-button')!.click();
@@ -64,7 +64,7 @@ describe('renderIdentifierScreen', () => {
   it('creates and saves a session when a fresh identifier is entered', async () => {
     const container = document.createElement('div');
     const onCreated = vi.fn();
-    renderIdentifierScreen(container, 'vehicle', onCreated);
+    renderIdentifierScreen(container, 'vehicle', onCreated, vi.fn());
 
     container.querySelector<HTMLInputElement>('#identifier-input')!.value = '11802';
     container.querySelector<HTMLButtonElement>('#continue-button')!.click();
@@ -82,7 +82,7 @@ describe('renderIdentifierScreen', () => {
     vi.mocked(wasIdentifierUsedToday).mockResolvedValue(true);
     const container = document.createElement('div');
     const onCreated = vi.fn();
-    renderIdentifierScreen(container, 'vehicle', onCreated);
+    renderIdentifierScreen(container, 'vehicle', onCreated, vi.fn());
 
     container.querySelector<HTMLInputElement>('#identifier-input')!.value = '11802';
     container.querySelector<HTMLButtonElement>('#continue-button')!.click();
@@ -101,7 +101,7 @@ describe('renderIdentifierScreen', () => {
     vi.mocked(wasIdentifierUsedToday).mockResolvedValue(true);
     const container = document.createElement('div');
     const onCreated = vi.fn();
-    renderIdentifierScreen(container, 'vehicle', onCreated);
+    renderIdentifierScreen(container, 'vehicle', onCreated, vi.fn());
 
     const input = container.querySelector<HTMLInputElement>('#identifier-input')!;
     const continueButton = container.querySelector<HTMLButtonElement>('#continue-button')!;
@@ -144,7 +144,7 @@ describe('renderIdentifierScreen', () => {
 
     const container = document.createElement('div');
     const onCreated = vi.fn();
-    renderIdentifierScreen(container, 'vehicle', onCreated);
+    renderIdentifierScreen(container, 'vehicle', onCreated, vi.fn());
 
     container.querySelector<HTMLInputElement>('#identifier-input')!.value = '11802';
     const continueButton = container.querySelector<HTMLButtonElement>('#continue-button')!;
@@ -159,6 +159,51 @@ describe('renderIdentifierScreen', () => {
     await flushMicrotasks();
 
     expect(saveSession).toHaveBeenCalledTimes(1);
+    expect(onCreated).toHaveBeenCalledTimes(1);
+  });
+
+  it('labels the second toggle "Name" instead of "Lot #"', () => {
+    const container = document.createElement('div');
+    renderIdentifierScreen(container, 'other', vi.fn(), vi.fn());
+
+    const lotToggle = container.querySelector<HTMLButtonElement>('[data-type="lot"]')!;
+    expect(lotToggle.textContent).toBe('Name');
+  });
+
+  it('calls onStartOver when Start Over is clicked', () => {
+    const container = document.createElement('div');
+    const onStartOver = vi.fn();
+    renderIdentifierScreen(container, 'vehicle', vi.fn(), onStartOver);
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+
+    expect(onStartOver).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores Start Over while a Continue submission is still in flight', async () => {
+    let resolveUsedToday!: (value: boolean) => void;
+    vi.mocked(wasIdentifierUsedToday).mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        resolveUsedToday = resolve;
+      })
+    );
+
+    const container = document.createElement('div');
+    const onCreated = vi.fn();
+    const onStartOver = vi.fn();
+    renderIdentifierScreen(container, 'vehicle', onCreated, onStartOver);
+
+    container.querySelector<HTMLInputElement>('#identifier-input')!.value = '11802';
+    container.querySelector<HTMLButtonElement>('#continue-button')!.click();
+
+    // Tap Start Over while Continue's async check is still pending.
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.click();
+
+    expect(onStartOver).not.toHaveBeenCalled();
+
+    resolveUsedToday(false);
+    await flushMicrotasks();
+
     expect(onCreated).toHaveBeenCalledTimes(1);
   });
 });

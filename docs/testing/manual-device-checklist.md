@@ -13,7 +13,8 @@ Run this checklist on a real iPhone and a real Android phone before each release
 - [ ] Confirm "Finish Session" stays disabled until all required categories have at least one photo, then enables.
 
 ## Other Item session
-- [ ] Start a new session, choose Other Item, enter a Lot # using the text keyboard (e.g. `LOT-A22`).
+- [ ] Start a new session, choose Other Item, enter a Name using the text keyboard (e.g. `Oak Dresser`).
+- [ ] From either Vehicle or Other Item's identifier screen, tap "Start Over" and confirm it returns to the start screen without creating a session.
 - [ ] Confirm the category list shown is Front, Left Side, Right Side, Back, Detail/Close-up, Damages, Additional (no Tire/Interior/Speedometer).
 - [ ] Confirm "Finish Session" is disabled until Front has a photo, then enables — Left Side, Right Side, Back, and Detail/Close-up are optional and do not block it.
 

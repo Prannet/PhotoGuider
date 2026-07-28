@@ -26,7 +26,12 @@ export function createApp(container: HTMLElement) {
         renderStartScreen(container, (sessionType) => navigate({ screen: 'identifier', sessionType }));
         break;
       case 'identifier':
-        renderIdentifierScreen(container, state.sessionType, (session) => navigate({ screen: 'hub', session }));
+        renderIdentifierScreen(
+          container,
+          state.sessionType,
+          (session) => navigate({ screen: 'hub', session }),
+          () => navigate({ screen: 'start' })
+        );
         break;
       case 'hub':
         renderChecklistHub(

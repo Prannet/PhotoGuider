@@ -6,7 +6,8 @@ import { sanitizeIdentifier, dateOnly } from '../naming';
 export function renderIdentifierScreen(
   container: HTMLElement,
   sessionType: SessionType,
-  onCreated: (session: Session) => void
+  onCreated: (session: Session) => void,
+  onStartOver: () => void
 ): void {
   let identifierType: IdentifierType = 'unit';
   let confirmedIdentifier: string | null = null;
@@ -17,24 +18,32 @@ export function renderIdentifierScreen(
       <h1>Enter ${sessionType === 'vehicle' ? 'Vehicle' : 'Item'} Identifier</h1>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
         <button data-type="unit" aria-pressed="${identifierType === 'unit'}">Unit #</button>
-        <button data-type="lot" aria-pressed="${identifierType === 'lot'}">Lot #</button>
+        <button data-type="lot" aria-pressed="${identifierType === 'lot'}">Name</button>
       </div>
       <input
         id="identifier-input"
         type="${identifierType === 'unit' ? 'tel' : 'text'}"
-        placeholder="${identifierType === 'unit' ? 'e.g. 11802' : 'e.g. LOT-A22'}"
+        placeholder="${identifierType === 'unit' ? 'e.g. 11802' : 'e.g. Oak Dresser'}"
       />
       <p id="identifier-warning" style="color:#b00020; display:none;"></p>
       <button id="continue-button">Continue</button>
+      <button id="start-over-button">Start Over</button>
     `;
 
     container.querySelector<HTMLButtonElement>('[data-type="unit"]')!.addEventListener('click', () => {
+      if (isSubmitting) return;
       identifierType = 'unit';
       draw();
     });
     container.querySelector<HTMLButtonElement>('[data-type="lot"]')!.addEventListener('click', () => {
+      if (isSubmitting) return;
       identifierType = 'lot';
       draw();
+    });
+
+    container.querySelector<HTMLButtonElement>('#start-over-button')!.addEventListener('click', () => {
+      if (isSubmitting) return;
+      onStartOver();
     });
 
     container.querySelector<HTMLButtonElement>('#continue-button')!.addEventListener('click', async () => {
