@@ -19,15 +19,17 @@ function escapeHtml(value: string): string {
 
 export function renderReviewSendScreen(container: HTMLElement, session: Session, onDone: () => void): void {
   const statuses: SendStatusMap = { sharepoint: 'idle', email: 'idle' };
-  let zipCache: { blob: Blob; filename: string } | null = null;
+  let zipPromise: Promise<{ blob: Blob; filename: string }> | null = null;
 
-  async function getZip() {
-    if (!zipCache) {
-      const blob = await buildSessionZip(session);
-      const filename = zipFilename(session.identifier, session.sessionType, session.createdAt);
-      zipCache = { blob, filename };
+  function getZip(): Promise<{ blob: Blob; filename: string }> {
+    if (!zipPromise) {
+      zipPromise = (async () => {
+        const blob = await buildSessionZip(session);
+        const filename = zipFilename(session.identifier, session.sessionType, session.createdAt);
+        return { blob, filename };
+      })();
     }
-    return zipCache;
+    return zipPromise;
   }
 
   function statusLabel(status: SendStatusMap[SendActionKey]): string {

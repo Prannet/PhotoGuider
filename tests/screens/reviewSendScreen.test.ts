@@ -16,6 +16,7 @@ vi.mock('../../src/session/sessionStore', () => ({
 
 import { createSession } from '../../src/session/session';
 import { renderReviewSendScreen } from '../../src/screens/reviewSendScreen';
+import { buildSessionZip } from '../../src/zip/buildZip';
 import { uploadZipToSharePoint } from '../../src/upload/sharepointUpload';
 import { shareZipViaEmail } from '../../src/upload/shareEmail';
 import { clearSession } from '../../src/session/sessionStore';
@@ -29,6 +30,7 @@ describe('renderReviewSendScreen', () => {
     vi.mocked(uploadZipToSharePoint).mockReset().mockResolvedValue(undefined);
     vi.mocked(shareZipViaEmail).mockReset().mockResolvedValue(undefined);
     vi.mocked(clearSession).mockClear();
+    vi.mocked(buildSessionZip).mockClear();
   });
 
   it('clears the session and calls onDone once the only attempted send succeeds', async () => {
@@ -89,5 +91,24 @@ describe('renderReviewSendScreen', () => {
 
     expect(clearSession).toHaveBeenCalledWith(session.id);
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds the session zip only once when both send actions are clicked before either resolves', async () => {
+    const session = createSession('vehicle', 'unit', '11802');
+    const onDone = vi.fn();
+    const container = document.createElement('div');
+    renderReviewSendScreen(container, session, onDone);
+
+    // Click both actions before letting buildSessionZip's promise settle, so both
+    // land on the "no cached zip yet" branch of getZip() concurrently. Without an
+    // in-flight-promise cache, this would trigger a second, wasted zip build.
+    container.querySelector<HTMLButtonElement>('#send-sharepoint')!.click();
+    container.querySelector<HTMLButtonElement>('#send-email')!.click();
+    await flushMicrotasks();
+    await flushMicrotasks();
+
+    expect(buildSessionZip).toHaveBeenCalledTimes(1);
+    expect(uploadZipToSharePoint).toHaveBeenCalledTimes(1);
+    expect(shareZipViaEmail).toHaveBeenCalledTimes(1);
   });
 });
